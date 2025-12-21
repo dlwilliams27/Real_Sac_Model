@@ -5,7 +5,7 @@ library('ggplot2')
 # 
 #reading in file
  #top
-dataset <-read.csv("C:/Users/Delanie Williams/OneDrive - The University of Alabama/Research/Thesis Materials/R_modeling/Real_Sac_Model/Forcings/B1_1076281_forcing.csv")
+dataset <-read.csv("C:/Users/Delanie Williams/OneDrive - The University of Alabama/Research/Thesis Materials/R_modeling/Real_Sac_Model/Forcings/B2_1112862_forcing.csv")
 #bottom
 #dataset <- read.csv("B1_1076281_forcing.csv")
  
@@ -23,6 +23,12 @@ P <- zoo(new_dataset$P , as.Date(new_dataset$Datetime))
 E <- zoo(new_dataset$PET ,as.Date(new_dataset$Datetime))
 Q <- zoo(new_dataset$Q ,as.Date(new_dataset$Datetime))
 
+#setting variable calibration dates
+date_length <- (diff(range(index(P))))/2
+start <- start(P)
+med <- start + date_length
+end <- end(P)
+
 partial=merge(P,E, all=TRUE)
 complete=merge(partial, Q, all=TRUE)
 head(complete)
@@ -39,18 +45,25 @@ print(Mod)
 #other optimization methods take a longggggg time
 rmse <- hmadstat("RMSE")
 kge <- hmadstat("KGE")
-Fit <-fitByOptim(Mod, kge)
+Fit <-fitBySCE(Mod, kge)
 
 #Returned Data and stats
-summary(Fit)
+results<-summary(Fit)
+write.csv(results, "trial_SAC", row.names=FALSE)
+print(summary(Fit))
+
 obs <- observed(Fit)
 sim <- fitted(Fit)
-winobs <-window(obs, start="1996-01-01", end= "1997-01-01")
-winsim <- window(sim, start="1996-01-01", end= "1997-01-01")
+start<-"2002-01-01"
+med<-"2003-01-01"
+end<- "2007-01-01"
+winobs <-window(obs, start, end)
+winsim <- window(sim, med, end)
 
 print(rmse)
 #Plots
-plot(winobs, type='l', col="blue", xlab = "Time (days)", ylab = "Observed Q (mm/day)")
+xlim=c(start, med)
+plot(winobs, xlim, type='l', col="blue", xlab = "Time (days)", ylab = "Observed Q (mm/day)")
 par(new=TRUE)
 plot(winsim,axes = FALSE, type = 'l', col = 'red', xlab= "", ylab="")
 axis(4)
@@ -59,6 +72,9 @@ mtext("Simulated Q", side = 4, line= 2.5)
 plot(obs, sim, xlim=c(0,10), ylim=c(0,10), xlab="Observed Q", ylab="Simulated Q")
 xyplot(optimtrace(Fit), type='b', xlab = "Function Count", ylab="objective function value")
 xyplot(Fit, ylim=c(0,10), ylab='Q mm/day')
+
+plot(Q)
+plot(P)
 
 #checking water balance
 yearP <- window(P, start=as.Date("1996-01-01"), end=as.Date("1997-01-01"))
@@ -75,6 +91,21 @@ print(paste("Yearly PET:", sumE))
 print(paste("Yearly P:", sumP))
 print(paste("Yearly Q", sumQ))
 print(paste("Outflow:",out))
-print(paste("Inflow:", into))
+print(paste("Inflow:", sumP))
 print(paste("Mass Balance Ratio:",ratio))
 print(paste("Change in storage:", dif))
+
+write.table(results, file=" ", append=False)
+
+
+coef<-coef(Fit)
+obj<-objFunVal(Fit)
+print(obj)
+
+coef_df<- data.frame(coef)
+kge_df<-data.frame(obj)
+t(df)
+print(kge_df)
+colnames(kge_df)<- c("KGE")
+rownames(coef_df)<- c("Insert_gage_here")
+rownames(coef_df) <-c("insert_gage_here",)
