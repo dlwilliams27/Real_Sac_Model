@@ -12,7 +12,7 @@ empty_coef<- list()
 empty_kge<- list()
 #loop to execute modeling for forcing data
 for (file in files) {
-  patt<- "(T|B)\\d_(\\d+)_[a-z]+"
+  patt<- "(T)\\d_(\\d+)_[a-z]+"
   match<- str_match(basename(file) , pattern=patt)
   gage_id <- match[,3]
   #pre-processing
